@@ -1,14 +1,15 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import Keyboard from "./components/Keyboard";
-import Operations from "./components/Operations";
+import { StyleSheet } from "react-native";
+import Calculator from "./components/Calculator";
+import CalculatorProvider from "./store/calculator";
 
 export default function App() {
   return (
     <>
       <StatusBar style="auto" />
-      <Operations />
-      <Keyboard />
+      <CalculatorProvider>
+        <Calculator />
+      </CalculatorProvider>
     </>
   );
 }
