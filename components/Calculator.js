@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import Button from "./Button";
 import Row from "./Row";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { CalculatorContext } from "../store/calculator";
 
 export default function Calculator() {
@@ -87,7 +87,7 @@ export default function Calculator() {
           >
             0
           </Button>
-          <Button onPress={() => tapButtonHandler("number", ",")}>,</Button>
+          <Button onPress={() => tapButtonHandler("number", ".")}>.</Button>
           <Button
             bgColor="#d3ca16"
             color="white"

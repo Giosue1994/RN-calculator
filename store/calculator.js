@@ -1,12 +1,15 @@
-import { createContext, useReducer, useState } from "react";
+import { createContext, useState } from "react";
+import { create, all } from "mathjs";
+
+const math = create(all);
 
 export const CalculatorContext = createContext({
-  state: "",
+  state: {},
   tapButtonHandler: (type, value) => {},
 });
 
 const initialState = {
-  currentValue: "",
+  currentValue: "0",
   operator: null,
   prevValue: null,
 };
@@ -22,9 +25,23 @@ export default function CalculatorProvider({ children }) {
   function tapButtonHandler(type, value) {
     if (type === "number") {
       setCalculatorState((prev) => {
+        if (calculatorState.currentValue === "0" && value === ".") {
+          return {
+            ...prev,
+            currentValue: `0${value}`,
+          };
+        }
+
+        if (calculatorState.currentValue === "0") {
+          return {
+            ...prev,
+            currentValue: `${value}`,
+          };
+        }
+
         return {
           ...prev,
-          currentValue: prev.currentValue + value.toLocaleString(),
+          currentValue: prev.currentValue + `${value}`,
           prevValue: prev.currentValue,
         };
       });
@@ -32,76 +49,71 @@ export default function CalculatorProvider({ children }) {
 
     if (type === "operator") {
       setCalculatorState((prev) => {
-        const current = parseFloat(prev.currentValue);
-        const previous = parseFloat(prev.prevValue);
-
-        if (prev.operator === "+") {
+        // Se l'operatore precedente era già presente e l'ultimo carattere non era un operatore, concatena l'operatore
+        const currentValue = prev.currentValue;
+        const lastChar = currentValue[currentValue.length - 1];
+        if (prev.operator && "+-*/".includes(lastChar)) {
           return {
             ...prev,
-            currentValue: current + previous,
-            ...resetState,
+            currentValue: currentValue.slice(0, -1) + value, // Rimuovi l'ultimo operatore e concatena quello nuovo
+            operator: value,
           };
         }
-
-        if (prev.operator === "-") {
+        // Se l'ultimo carattere non è un operatore, concatena l'operatore
+        if (!"+-*/".includes(lastChar)) {
           return {
             ...prev,
-            currentValue: current - previous,
-            ...resetState,
+            currentValue: currentValue + value,
+            operator: value,
           };
         }
-
-        if (prev.operator === "*") {
-          return {
-            ...prev,
-            currentValue: current * previous,
-            ...resetState,
-          };
-        }
-
-        if (prev.operator === "/") {
-          return {
-            ...prev,
-            currentValue: current / previous,
-            ...resetState,
-          };
-        }
-
-        return {
-          ...prev,
-          operator: value,
-          prevValue: value,
-          currentValue: prev.currentValue + value,
-        };
+        // Altrimenti, mantieni il valore corrente senza aggiungere l'operatore
+        return prev;
       });
     }
 
     if (type === "equal") {
       setCalculatorState((prev) => {
-        const operationArray = prev.currentValue.split("");
-        const operation = operationArray.join("");
+        let calculatedResult;
+        const operation = prev.currentValue;
 
-        function result(operation) {
-          return new Function("return " + operation + ";").call();
+        try {
+          calculatedResult = math.evaluate(operation);
+        } catch (error) {
+          calculatedResult = prev.currentValue;
         }
 
-        console.log(result(operation));
+        if (
+          prev.currentValue === "0" ||
+          prev.currentValue.length === 0 ||
+          isNaN(prev.currentValue.slice(-1))
+        ) {
+          return {
+            ...prev,
+            currentValue: "0",
+            ...resetState,
+          };
+        }
 
         return {
           ...prev,
-          currentValue: result(operation),
+          currentValue: calculatedResult.toString(),
           ...resetState,
         };
       });
     }
 
     if (type === "percentage") {
-      setCalculatorState((prev) => {
-        return {
-          ...prev,
-          currentValue: prev.currentValue / 100,
-        };
-      });
+      if (!isNaN(calculatorState.currentValue)) {
+        setCalculatorState((prev) => {
+          return {
+            ...prev,
+            currentValue: prev.currentValue / 100,
+          };
+        });
+      } else {
+        return;
+      }
     }
 
     if (type === "clear") {
@@ -109,13 +121,21 @@ export default function CalculatorProvider({ children }) {
     }
 
     if (type === "cancel") {
-      setCalculatorState((prev) => {
-        return {
-          ...prev,
-          currentValue: prev.currentValue.slice(0, -1),
-          prevValue: prev.prevValue.slice(0, -1),
-        };
-      });
+      if (
+        calculatorState.currentValue !== undefined ||
+        calculatorState.currentValue !== "" ||
+        calculatorState.prevValue !== null
+      ) {
+        setCalculatorState((prev) => {
+          return {
+            ...prev,
+            currentValue: prev.currentValue.slice(0, -1),
+            ...resetState,
+          };
+        });
+      } else {
+        return;
+      }
     }
   }
 

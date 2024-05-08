@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     borderWidth: 0.5,
-    borderColor: "#7a7a7a",
+    borderColor: "#252525",
   },
   buttonContainer: {
     alignItems: "center",
